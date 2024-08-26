@@ -11,6 +11,7 @@ def initialize_db():
             full_name VARCHAR(100),
             username VARCHAR(100),
             email VARCHAR(100),
+            mobile_number VARCHAR(15),
             registered_date DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     ''')    

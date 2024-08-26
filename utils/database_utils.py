@@ -10,6 +10,28 @@ def get_db_connection():
         pass
 
 
+
+def get_or_create_user(cid):
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('select cid from user where cid=%s',(cid,))
+        user=cursor.fetchone()
+        if not user:
+            cursor.execute('insert into user(cid) values(%s)',(cid,))
+            conn.commit()
+            conn.close()
+        return 1
+
+
+
+    except Exception as e:
+        return 0
+
+
+
+
 def get_all_products(category=None):
     try:
         conn = get_db_connection()
@@ -85,12 +107,63 @@ def add_to_cart(cid,product_id,quantity):
         cursor.execute('SELECT inventory FROM PRODUCT WHERE product_id=%s',(product_id,))
         product=cursor.fetchone()
         if int(quantity)<=product['inventory']:
+            
             cursor.execute('insert into orderItem(product_id,order_id,quantity) values(%s,%s,%s)',(product_id,order_id,quantity))
 
 
-        
-            
-            
+        conn.commit()
+        conn.close()
+    
+    except Exception as e:
+        return 0
+
+
+def view_cart(cid):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
+
+
+
+    except Exception as e:
+        return 0
+
+def remove_from_cart(cid,orderItem_id):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
+
+
+
+    except Exception as e:
+        return 0
+
+def checkout(cid,address):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
+
+
+
+    except Exception as e:
+        return 0
+
+
+def get_profile_data(cid):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
+        cursor.execute('select * from user where user_id')
+
+
+    except Exception as e:
+        return 0
+
+
+def profile_settings(cid,full_name=None,username=None, email=None, mobile_number=None,):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
 
 
 
@@ -99,56 +172,49 @@ def add_to_cart(cid,product_id,quantity):
 
 
 
+def get_all_orders(cid):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
 
 
 
+    except Exception as e:
+        return 0
 
 
 
+def get_order_detail(cid,order_id):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
 
 
 
+    except Exception as e:
+        return 0
 
 
 
+def get_all_users():
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
 
 
 
+    except Exception as e:
+        return 0
+
+
+def get_user_detail(user_id):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
 
 
 
-def add_to_cart(chat_id, product_code, quantity):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO shopping_cart (chat_id, product_code, quantity) 
-        VALUES (%s, %s, %s) 
-        ON DUPLICATE KEY UPDATE quantity = quantity + %s
-    ''', (chat_id, product_code, quantity, quantity))
-    conn.commit()
-    conn.close()
+    except Exception as e:
+        return 0
 
-def get_cart_from_db(chat_id):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute('''
-        SELECT p.name, p.price, sc.quantity 
-        FROM shopping_cart sc 
-        JOIN products p ON sc.product_code = p.code 
-        WHERE sc.chat_id = %s
-    ''', (chat_id,))
-    cart_items = cursor.fetchall()
-    conn.close()
-    return cart_items
 
-def remove_from_cart(user_id, product_code):
-    conn = mysql.connector.connect(**DB_CONFIG)
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        DELETE FROM cart 
-        WHERE user_id = %s AND product_id = %s
-    ''', (user_id, product_code))
-    
-    conn.commit()
-    conn.close()

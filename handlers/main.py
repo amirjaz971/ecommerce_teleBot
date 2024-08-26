@@ -1,6 +1,6 @@
 
 from config import Channel_cid, admins,bot,logging
-from utils.database_utils import  get_all_products,get_product_detail,add_product,remove_product,add_to_cart, get_cart_from_db,remove_from_cart
+from utils.database_utils import  get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart, view_cart,remove_from_cart,checkout,get_profile_data,profile_settings,get_all_orders,get_order_detail,get_all_users,get_user_detail
 from messages import command_default
 from handlers import messages, callback_queries, photos
 from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup,KeyboardButton
@@ -19,21 +19,30 @@ if __name__=='__main__':
         'view_cart':'View your shopping cart',
         'add_to_cart':'Add a product to your cart',
         'remove_from_cart':'Remove a product from your cart',
-        'profile':'View or update your profile information',
+        'checkout':'Finalize the order and shipping',
+        'profile_view':'View your profile information',
+        'profile_settings':'Edit your profile information',
+        'order_history':'View all completed orders',
+        'order_detail':'View completed order detail',
         }
 
     admin_commands={
         'add_product':'Add product to the list',
         'remove_product':'Remove product from the list',
         'update_product':'Update product',
+        'view_users':'View all users',
+        'view_user_detail':'View user detail',    
     }
 
 
     @bot.message_handler(commands=['start'])
     def start_command(message):
         cid = message.chat.id
-        bot.send_message(cid, 'Welcome to the ECommerce bot! Use /help to see available commands.')
-
+        response=get_or_create_user(cid)
+        if response==1:
+            bot.send_message(cid, 'Welcome to the ECommerce bot! Use /help to see available commands.')
+        else:
+            bot.send_message(cid,'Error occured please enter the /start command again')
 
 
     @bot.message_handler(commands=['help'])
@@ -90,69 +99,94 @@ if __name__=='__main__':
             command_default(message)   
 
 
+    @bot.message_handler(commands=['view_cart'])
+    def view_cart_command(message):
+        cid = message.chat.id
 
 
     @bot.message_handler(commands=['add_to_cart'])
     def add_to_cart_command(message):
         cid = message.chat.id
-        parts = message.text.split()
-        if len(parts) != 3:
-            bot.send_message(cid, 'Usage: /add_to_cart <product_code> <quantity>')
-            return
+
+        bot.send_message(cid,"Enter the product ID and quantity with this format:product_id,quantity")
+        user_step[cid]=4
         
-        product_code = int(parts[1])
-        quantity = int(parts[2])
-        
-        add_to_cart(cid, product_code, quantity)
-        bot.send_message(cid, f'Added {quantity} of product code {product_code} to your cart.')
 
-
-
-
-
-
-
-
-    @bot.message_handler(commands=['view_cart'])
-    def view_cart_command(message):
-        cid = message.chat.id
-        cart_items = get_cart_from_db(cid)
-        if cart_items:
-            response = 'Your cart:\n'
-            for index, item in enumerate(cart_items, start=1):
-                response += f"{index}. Name: {item[0]}, Price: ${item[1]}, Quantity: {item[2]}\n"
-            response += '\nUse /remove_from_cart <item_name> to remove an item by its name.'
-            bot.send_message(cid, response)
-        else:
-            bot.send_message(cid, 'Your cart is empty.')
-
-    @bot.message_handler(commands=['remove_product'])
+    @bot.message_handler(commands=['remove_from_cart'])
     def remove_from_cart_command(message):
         cid = message.chat.id
-        parts = message.text.split(maxsplit=1)
-        
-        if len(parts) != 2:
-            bot.send_message(cid, 'Usage: /remove_from_cart <item_name>')
-            return
+        user_step[cid]=5
 
-        item_name = parts[1].strip()
-        
-        # Get cart items to find the product code associated with the item name
-        cart_items = get_cart_from_db(cid)
-        product_code = None
-        
-        for item in cart_items:
-            if item[0].lower() == item_name.lower():
-                product_code = item[3]  # Assuming product_code is the 4th element
-                break
 
-        if not product_code:
-            bot.send_message(cid, 'Item not found in your cart.')
-            return
 
-        # Remove the item from the cart
-        remove_from_cart(cid, product_code)
-        bot.send_message(cid, f'Removed "{item_name}" from your cart.')
+
+
+    @bot.message_handler(commands=['checkout'])
+    def checkout_command(message):
+        cid=message.chat.id
+        bot.send_message(cid,'Enter the address to check and ship the order')
+        user_step[cid]=6
+
+
+    @bot.message_handler(commands=['profile_view'])
+    def profile_view_command(message):
+        cid=message.chat.id
+        profile_data=get_profile_data(cid)
+        text='Profile Information:\n\n'
+        for data in profile_data:
+            text+=f"{data}\n\n"
+        bot.send_message(cid,text)
+
+    @bot.message_handler(commands=['profile_settings'])
+    def profile_settings_command(message):
+        cid=message.chat.id
+        bot.send_message(cid,'Enter the datas with this format to edit your profile:')
+        user_step[cid]=7
+
+
+
+    @bot.message_handler(commands=['order_history'])
+    def order_history_command(message):
+        cid=message.chat.id
+        orders=get_all_orders(cid)
+        text='All Orders:\n\n'
+        for order in orders:
+            text+=f"{order}\n\n"
+        bot.send_message(cid,text)
+
+
+
+    @bot.message_handler(commands=['order_detail'])
+    def order_detail_command(message):
+        cid=message.chat.id
+        bot.send_message(cid,'Enter the Order ID to display order details')
+        user_step[cid]=8
+
+
+
+
+    @bot.message_handler(commands=['view_users'])
+    def view_users_command(message):
+        cid=message.chat.id
+        if cid in admins:
+            users=get_all_users()
+            text='Users:\n\n'
+            for user in users:
+                text+=f"{user}\n\n"
+            bot.send_message(cid,text)
+        else:
+            command_default(message)
+                
+
+    @bot.message_handler(commands=['view_user_detail'])
+    def view_user_detail_command(message):
+        cid=message.chat.id
+        if cid in admins:
+            bot.send_message(cid,'Enter the user ID to display user detail')
+            user_step[cid]=9
+
+        else:
+            command_default(message)
 
 
 
@@ -164,7 +198,7 @@ if __name__=='__main__':
 
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==0)
-    def get_product_category_to_display(message):
+    def get_product_category_to_display_func(message):
         cid=message.chat.id
         category=message.text.strip()
         products=get_all_products(category)
@@ -181,7 +215,7 @@ if __name__=='__main__':
 
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==1)
-    def get_product_id_to_display(message):
+    def get_product_id_to_display_func(message):
         cid=message.chat.id
         product_id=message.text.strip()
         try:
@@ -204,7 +238,7 @@ if __name__=='__main__':
             
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==2)
-    def get_product_datas_to_add(message):
+    def get_product_datas_to_add_func(message):
         cid=message.chat.id
         datas=message.text
         try:
@@ -220,7 +254,7 @@ if __name__=='__main__':
 
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==3)
-    def get_product_id_to_remove(message):
+    def get_product_id_to_remove_func(message):
         cid=message.chat.id
         product_id=message.text.strip()
         response=remove_product(product_id)
@@ -233,7 +267,40 @@ if __name__=='__main__':
 
 
 
+    @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==4)
+    def add_to_cart_func(message):
+        pass
 
+
+
+
+
+
+    @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==5)
+    def remove_from_cart_func(message):
+        pass
+
+
+
+
+    @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==6)
+    def checkout_func(message):
+        pass
+
+
+    @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==7)
+    def profile_settings_func(message):
+        pass
+
+
+    @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==8)
+    def order_detail_func(message):
+        pass
+
+
+    @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==9)
+    def view_user_detail_func(message):
+        pass
 
 
 # @bot.callback_query_handler(func=lambda call: True)
