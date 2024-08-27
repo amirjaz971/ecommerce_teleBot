@@ -122,7 +122,7 @@ def view_cart(cid):
     try:
         conn=get_db_connection()
         cursor=conn.cursor(dictionary=True)
-
+        cursor.execute('select ')
 
 
     except Exception as e:
@@ -153,7 +153,13 @@ def get_profile_data(cid):
     try:
         conn=get_db_connection()
         cursor=conn.cursor(dictionary=True)
-        cursor.execute('select * from user where user_id')
+        cursor.execute('select * from user where cid=%s',(cid,))
+        user=cursor.fetchone()
+
+        if user:
+            return user
+        else:
+            return 0
 
 
     except Exception as e:
@@ -176,7 +182,12 @@ def get_all_orders(cid):
     try:
         conn=get_db_connection()
         cursor=conn.cursor(dictionary=True)
-
+        cursor.execute('select * from `order` where cid=%s',(cid,))
+        orders=cursor.fetchall()
+        if orders:
+            return orders
+        else:
+            return 0
 
 
     except Exception as e:

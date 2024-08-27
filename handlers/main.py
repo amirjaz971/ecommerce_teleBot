@@ -132,15 +132,20 @@ if __name__=='__main__':
     def profile_view_command(message):
         cid=message.chat.id
         profile_data=get_profile_data(cid)
-        text='Profile Information:\n\n'
-        for data in profile_data:
-            text+=f"{data}\n\n"
-        bot.send_message(cid,text)
+        if profile_data!=0:
+            text='Profile Information:\n\n'
+            for key in profile_data:
+                text+=f"{key}: {profile_data[key]}\n\n"
+            bot.send_message(cid,text)
+        else:
+            bot.send_message(cid,'Nothing found!')
+
+
 
     @bot.message_handler(commands=['profile_settings'])
     def profile_settings_command(message):
         cid=message.chat.id
-        bot.send_message(cid,'Enter the datas with this format to edit your profile:')
+        bot.send_message(cid,'Enter the datas with this format to edit your profile:full_name,username,email,mobile_number')
         user_step[cid]=7
 
 
@@ -149,11 +154,13 @@ if __name__=='__main__':
     def order_history_command(message):
         cid=message.chat.id
         orders=get_all_orders(cid)
-        text='All Orders:\n\n'
-        for order in orders:
-            text+=f"{order}\n\n"
-        bot.send_message(cid,text)
-
+        if orders!=0:
+            text='All Orders:\n\n'
+            for key in orders:
+                text+=f"{key}: {orders[key]}\n\n"
+            bot.send_message(cid,text)
+        else:
+            bot.send_message(cid,'Nothing found!')
 
 
     @bot.message_handler(commands=['order_detail'])
@@ -171,8 +178,8 @@ if __name__=='__main__':
         if cid in admins:
             users=get_all_users()
             text='Users:\n\n'
-            for user in users:
-                text+=f"{user}\n\n"
+            for key in users:
+                text+=f"{key}: {users[key]}\n\n"
             bot.send_message(cid,text)
         else:
             command_default(message)
