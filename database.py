@@ -24,18 +24,11 @@ def initialize_db():
             price double(10,2) NOT NULL,
             inventory SMALLINT UNSIGNED DEFAULT 1,
             description TEXT,
+            img VARCHAR(150),
             added_date DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     ''')    
 
-    cr.execute('''
-        CREATE TABLE IF NOT EXISTS product_images (
-            image_id INT AUTO_INCREMENT PRIMARY KEY,
-            product_id INT,
-            file_id VARCHAR(150) NOT NULL,
-            FOREIGN KEY(product_id) REFERENCES product(product_id)
-        )
-    ''')
 
 
 

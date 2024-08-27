@@ -82,7 +82,7 @@ if __name__=='__main__':
         cid=message.chat.id
         if cid in admins:
 
-            bot.send_message(cid,'To add product use this format: category,name,price,inventory,description')
+            bot.send_message(cid,'To add product please send image and the caption using this format: category,name,price,inventory,description')
             user_step[cid]=2
         else:
             command_default(message)
@@ -246,20 +246,20 @@ if __name__=='__main__':
 
             
 
-    @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==2)
-    def get_product_datas_to_add_func(message):
-        cid=message.chat.id
-        datas=message.text
-        try:
-            datas_lst=datas.split(',')
-            response=add_product(datas_lst)
-            if response==1:
-                bot.send_message(cid,'Datas have been added successfully')
-            else:
-                bot.send_message(cid,'Adding datas failed due to these possible reasons:\n1-Product not found\n2-Datas are wrong')
-        except:
-            bot.send_message(cid,'Please enter the datas with the given format')
-        user_step[cid]=-1    
+    # @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==2)
+    # def get_product_datas_to_add_func(message):
+    #     cid=message.chat.id
+    #     datas=message.text
+    #     try:
+    #         datas_lst=datas.split(',')
+    #         response=add_product(datas_lst)
+    #         if response==1:
+    #             bot.send_message(cid,'Datas have been added successfully')
+    #         else:
+    #             bot.send_message(cid,'Adding datas failed due to these possible reasons:\n1-Product not found\n2-Datas are wrong')
+    #     except:
+    #         bot.send_message(cid,'Please enter the datas with the given format')
+    #     user_step[cid]=-1    
 
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==3)
@@ -317,11 +317,48 @@ if __name__=='__main__':
         else:
             bot.send_message(cid,'Nothing found!')        
 
-
+        user_step[cid]=-1
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==9)
     def view_user_detail_func(message):
         pass
+
+
+
+
+@bot.message_handler(content_types=['photo'])
+def handle_product_image(message):
+    cid=message.chat.id
+    if user_step.get(cid)==2:
+        if message.caption:
+            data_lst=message.caption.split(',')
+            if len(data_lst)==5:
+                try:
+                    file_info=bot.get_file(message.photo[-1].file_id)
+                    
+                    downloaded_file=bot.download_file(file_info.file_path)
+                    img_path=f'product_images/{file_info.file_path.split("/")[-1]}'
+                    with open(img_path,'wb') as new_file:
+                        new_file.write(downloaded_file)
+
+                    data_lst.append(img_path)
+                    response=add_product(data_lst)
+                    if response==1:
+                        bot.send_message(cid,'Product has been added successfully')
+                    else:
+                        bot.send_message(cid,'Failed to add product')
+                except Exception as e:
+                    bot.send_message(cid,f"Error: {e}")
+            else:
+                bot.send_message(cid,'Incorrect format. Please use: category,name,price,inventory,description')
+        else:
+            bot.send_message(cid,'Please provide caption for product details')
+    else:
+        bot.send_message(cid,'Please use /add_product command')    
+
+
+
+
 
 
 # @bot.callback_query_handler(func=lambda call: True)
@@ -361,7 +398,7 @@ if __name__=='__main__':
         
 
 
-    bot.message_handler(func=lambda m: True, content_types=['photo'])(photos.photo_message_handle)
+    
 
 
     bot.message_handler(func=lambda m: True, content_types=['text'])(messages.command_default)

@@ -21,14 +21,15 @@ def get_or_create_user(cid):
         if not user:
             cursor.execute('insert into user(cid) values(%s)',(cid,))
             conn.commit()
-            conn.close()
+
         return 1
 
 
 
     except Exception as e:
         return 0
-
+    finally:
+        conn.close()
 
 
 
@@ -42,11 +43,12 @@ def get_all_products(category=None):
             cursor.execute('SELECT product_id,name,price FROM product')
         products = cursor.fetchall()
         
-        conn.close()
+
         return products
     except Exception as e:
         pass
-
+    finally:
+        conn.close()
 
 def get_product_detail(product_id):
     try:
@@ -54,25 +56,27 @@ def get_product_detail(product_id):
         cursor=conn.cursor(dictionary=True)
         cursor.execute('select * from product where product_id=%s',(product_id,))
         product=cursor.fetchone()
-        cursor.execute('select file_id from product_images where product_id=%s',(product_id,))
-        product_img=cursor.fetchall()
-        conn.close()
-        return product,product_img
+        # cursor.execute('select file_id from product_images where product_id=%s',(product_id,))
+        # product_img=cursor.fetchall()
+
+        return product
     except Exception as e:
         pass
-
+    finally:
+        conn.close()
 
 def add_product(data_lst):
     try:
         conn=get_db_connection()
         cursor=conn.cursor()
-        cursor.execute('insert into product(category, name, price, inventory, description) values(%s,%s,%s,%s,%s)',(data_lst[0],data_lst[1],data_lst[2],data_lst[3],data_lst[4]))
+        cursor.execute('insert into product(category, name, price, inventory, description,img) values(%s,%s,%s,%s,%s,%s)',(data_lst[0],data_lst[1],data_lst[2],data_lst[3],data_lst[4],data_lst[5]))
         conn.commit()
-        conn.close()
+
         return 1
     except Exception as e:
         return 0
-
+    finally:
+        conn.close()
 
 
 def remove_product(product_id):
@@ -83,11 +87,12 @@ def remove_product(product_id):
 
         cursor.execute('delete from product where product_id=%s',(product_id,))
         conn.commit()
-        conn.close()
+
         return 1
     except Exception as e:
         return 0
-
+    finally:
+        conn.close()
 
 
 def add_to_cart(cid,product_id,quantity):
@@ -112,11 +117,11 @@ def add_to_cart(cid,product_id,quantity):
 
 
         conn.commit()
-        conn.close()
-    
+
     except Exception as e:
         return 0
-
+    finally:
+        conn.close()
 
 def view_cart(cid):
     try:
@@ -127,6 +132,10 @@ def view_cart(cid):
 
     except Exception as e:
         return 0
+    finally:
+        conn.close()    
+
+
 
 def remove_from_cart(cid,orderItem_id):
     try:
@@ -137,6 +146,9 @@ def remove_from_cart(cid,orderItem_id):
 
     except Exception as e:
         return 0
+    finally:
+        conn.close()
+
 
 def checkout(cid,address):
     try:
@@ -147,7 +159,8 @@ def checkout(cid,address):
 
     except Exception as e:
         return 0
-
+    finally:
+        conn.close()
 
 def get_profile_data(cid):
     try:
@@ -164,7 +177,8 @@ def get_profile_data(cid):
 
     except Exception as e:
         return 0
-
+    finally:
+        conn.close()
 
 def profile_settings(cid,full_name=None,username=None, email=None, mobile_number=None,):
     try:
@@ -176,7 +190,8 @@ def profile_settings(cid,full_name=None,username=None, email=None, mobile_number
     except Exception as e:
         return 0
 
-
+    finally:
+        conn.close()
 
 def get_all_orders(cid):
     try:
@@ -192,7 +207,8 @@ def get_all_orders(cid):
 
     except Exception as e:
         return 0
-
+    finally:
+        conn.close()
 
 
 def get_order_detail(cid,order_id):
@@ -209,7 +225,8 @@ def get_order_detail(cid,order_id):
 
     except Exception as e:
         return 0
-
+    finally:
+        conn.close()
 
 
 def get_all_users():
@@ -222,6 +239,9 @@ def get_all_users():
     except Exception as e:
         return 0
 
+    finally:
+        conn.close()
+
 
 def get_user_detail(user_id):
     try:
@@ -233,4 +253,5 @@ def get_user_detail(user_id):
     except Exception as e:
         return 0
 
-
+    finally:
+        conn.close()
