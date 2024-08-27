@@ -156,8 +156,9 @@ if __name__=='__main__':
         orders=get_all_orders(cid)
         if orders!=0:
             text='All Orders:\n\n'
-            for key in orders:
-                text+=f"{key}: {orders[key]}\n\n"
+            for order in orders:
+                for key in order:
+                    text+=f"{key}: {order[key]}\n\n"
             bot.send_message(cid,text)
         else:
             bot.send_message(cid,'Nothing found!')
@@ -178,8 +179,9 @@ if __name__=='__main__':
         if cid in admins:
             users=get_all_users()
             text='Users:\n\n'
-            for key in users:
-                text+=f"{key}: {users[key]}\n\n"
+            for user in users:
+                for key in user:
+                    text+=f"{key}: {user[key]}\n\n"
             bot.send_message(cid,text)
         else:
             command_default(message)
@@ -302,7 +304,19 @@ if __name__=='__main__':
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==8)
     def order_detail_func(message):
-        pass
+        cid=message.chat.id
+        order_id=message.text.strip()
+        order_detail=get_order_detail(cid,order_id)
+        if order_detail!=0:
+            text='Order Detail:\n\n'
+            for order in order_detail:
+                for key in order:
+                    text+=f"{key}: {order[key]}\n\n"
+            bot.send_message(cid,text)
+
+        else:
+            bot.send_message(cid,'Nothing found!')        
+
 
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==9)

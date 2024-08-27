@@ -199,7 +199,12 @@ def get_order_detail(cid,order_id):
     try:
         conn=get_db_connection()
         cursor=conn.cursor(dictionary=True)
-
+        cursor.execute('select * from `order` inner join orderItem on order.order_id=orderItem.order_id where order.cid=%s AND order.order_id=%s',(cid,order_id))
+        order_detail=cursor.fetchall()
+        if order_detail:
+            return order_detail
+        else:
+            return 0
 
 
     except Exception as e:
