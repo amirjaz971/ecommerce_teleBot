@@ -58,10 +58,12 @@ def get_product_detail(product_id):
         product=cursor.fetchone()
         # cursor.execute('select file_id from product_images where product_id=%s',(product_id,))
         # product_img=cursor.fetchall()
-
-        return product
+        if product:
+            return product
+        else:
+            return 0
     except Exception as e:
-        pass
+        return 0
     finally:
         conn.close()
 

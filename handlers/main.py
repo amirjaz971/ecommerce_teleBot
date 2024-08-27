@@ -2,7 +2,7 @@
 from config import Channel_cid, admins,bot,logging
 from utils.database_utils import  get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart, view_cart,remove_from_cart,checkout,get_profile_data,profile_settings,get_all_orders,get_order_detail,get_all_users,get_user_detail
 from messages import command_default
-from handlers import messages, callback_queries, photos
+from handlers import messages
 from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup,KeyboardButton
 
 
@@ -226,40 +226,33 @@ if __name__=='__main__':
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==1)
     def get_product_id_to_display_func(message):
         cid=message.chat.id
-        product_id=message.text.strip()
+        
         try:
-            
-            product,img=get_product_detail(product_id)
-            if product:
-                response='Product detail\n\n'
-                for key in product:
-
-                    response+=f"{key}: {product[key]}\n\n"
-                bot.send_message(cid,response)
+            product_id=message.text.strip()
+            product=get_product_detail(product_id)
+            if product!=0:
+                product_info = (
+                    
+                    f"**Category:** {product['category']}\n"
+                    f"**Product Name:** {product['name']}\n"
+                    f"**Price:** ${product['price']}\n"
+                    f"**Inventory:** {product['inventory']}\n"
+                    f"**Description:** {product['description']}"
+                )
+                    
+                if product['img']:
+                    with open(product['img'],'rb') as photo:
+                        bot.send_photo(cid,photo,caption=product_info,parse_mode='Markdown')
+                else:
+                    bot.send_message(cid,product_info,parse_mode='Markdown')
             else:
                 bot.send_message(cid,'Product not found!')
-        except ValueError:
-            bot.send_message(cid,'ID must be integer!')    
+        except Exception as e:
+            bot.send_message(cid, 'Please provide a valid product ID.')    
 
         user_step[cid]=-1 
 
 
-            
-
-    # @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==2)
-    # def get_product_datas_to_add_func(message):
-    #     cid=message.chat.id
-    #     datas=message.text
-    #     try:
-    #         datas_lst=datas.split(',')
-    #         response=add_product(datas_lst)
-    #         if response==1:
-    #             bot.send_message(cid,'Datas have been added successfully')
-    #         else:
-    #             bot.send_message(cid,'Adding datas failed due to these possible reasons:\n1-Product not found\n2-Datas are wrong')
-    #     except:
-    #         bot.send_message(cid,'Please enter the datas with the given format')
-    #     user_step[cid]=-1    
 
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==3)
