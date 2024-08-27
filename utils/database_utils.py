@@ -10,6 +10,23 @@ def get_db_connection():
         pass
 
 
+def fetch_categories():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)    
+
+        cursor.execute('SELECT DISTINCT category FROM product')   
+        categories=cursor.fetchall()
+        if categories:
+            return categories
+        else:
+            return 0 
+    except Exception as e:
+        return 0
+    finally:
+        cursor.close()
+        conn.close()
+
 
 def get_or_create_user(cid):
 
@@ -29,6 +46,7 @@ def get_or_create_user(cid):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 
@@ -48,6 +66,7 @@ def get_all_products(category=None):
     except Exception as e:
         pass
     finally:
+        cursor.close()
         conn.close()
 
 def get_product_detail(product_id):
@@ -65,6 +84,7 @@ def get_product_detail(product_id):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 def add_product(data_lst):
@@ -78,6 +98,7 @@ def add_product(data_lst):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 
@@ -94,6 +115,7 @@ def remove_product(product_id):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 
@@ -123,6 +145,7 @@ def add_to_cart(cid,product_id,quantity):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 def view_cart(cid):
@@ -135,6 +158,7 @@ def view_cart(cid):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()    
 
 
@@ -149,6 +173,7 @@ def remove_from_cart(cid,orderItem_id):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 
@@ -162,6 +187,7 @@ def checkout(cid,address):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 def get_profile_data(cid):
@@ -180,6 +206,7 @@ def get_profile_data(cid):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 def profile_settings(cid,full_name=None,username=None, email=None, mobile_number=None,):
@@ -193,6 +220,7 @@ def profile_settings(cid,full_name=None,username=None, email=None, mobile_number
         return 0
 
     finally:
+        cursor.close()
         conn.close()
 
 def get_all_orders(cid):
@@ -210,6 +238,7 @@ def get_all_orders(cid):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 
@@ -228,6 +257,7 @@ def get_order_detail(cid,order_id):
     except Exception as e:
         return 0
     finally:
+        cursor.close()
         conn.close()
 
 
@@ -242,6 +272,7 @@ def get_all_users():
         return 0
 
     finally:
+        cursor.close()
         conn.close()
 
 
@@ -256,4 +287,5 @@ def get_user_detail(user_id):
         return 0
 
     finally:
+        cursor.close()
         conn.close()

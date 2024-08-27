@@ -1,6 +1,6 @@
 
 from config import Channel_cid, admins,bot,logging
-from utils.database_utils import  get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart, view_cart,remove_from_cart,checkout,get_profile_data,profile_settings,get_all_orders,get_order_detail,get_all_users,get_user_detail
+from utils.database_utils import  fetch_categories,get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart, view_cart,remove_from_cart,checkout,get_profile_data,profile_settings,get_all_orders,get_order_detail,get_all_users,get_user_detail
 from messages import command_default
 from handlers import messages
 from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup,KeyboardButton
@@ -63,8 +63,19 @@ if __name__=='__main__':
     @bot.message_handler(commands=['list_products'])
     def list_products_command(message):
         cid = message.chat.id
-        bot.send_message(cid,'Enter the category')
-        user_step[cid]=0
+        reply_keyboard=ReplyKeyboardMarkup(resize_keyboard=True)
+        categories=fetch_categories()
+        if categories!=0:
+            
+            
+            for category in categories:
+                reply_keyboard.add(category[0])
+            bot.send_message(cid,'choose the category',reply_markup=reply_keyboard)
+            user_step[cid]=0
+        else:
+            bot.send_message(cid,'Error occured please try /list_products command again')
+        
+        
 
 
     

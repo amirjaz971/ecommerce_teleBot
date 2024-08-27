@@ -5,6 +5,10 @@ def initialize_db():
     conn = mysql.connector.connect(**DB_CONFIG)
     cr=conn.cursor()
 
+    #cr.execute('create database if not exists ecommercebotdb')
+
+
+
     cr.execute('''
         CREATE TABLE IF NOT EXISTS user (
             cid BIGINT UNSIGNED NOT NULL PRIMARY KEY,
