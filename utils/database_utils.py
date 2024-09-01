@@ -1,5 +1,6 @@
 import mysql.connector
 from config import DB_CONFIG
+import logging
 
 
 def get_db_connection():
@@ -213,9 +214,11 @@ def profile_settings(cid,full_name=None,username=None, email=None, mobile_number
     try:
         conn=get_db_connection()
         cursor=conn.cursor(dictionary=True)
+        cursor.execute('update user set full_name=%s,username=%s,email=%s,mobile_number=%s where cid=%s ',(full_name,username,email,mobile_number,cid))
 
 
-
+        conn.commit()
+        return 1
     except Exception as e:
         return 0
 
@@ -271,9 +274,6 @@ def get_all_users():
             return users
         else:
             return 0
-
-
-
     except Exception as e:
         return 0
 

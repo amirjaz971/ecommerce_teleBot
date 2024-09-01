@@ -1,15 +1,15 @@
 
-from config import admins,bot,logging
+from config import admins,bot,setup_logging_config
 from utils.database_utils import  fetch_categories,get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart, view_cart,remove_from_cart,checkout,get_profile_data,profile_settings,get_all_orders,get_order_detail,get_all_users,get_user_detail
 from messages import command_default
 from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup,KeyboardButton
-
+import logging
 
 
 if __name__=='__main__':
     user_step=dict()
     hideboard = ReplyKeyboardRemove()
-    
+    setup_logging_config()
 
     commands={
         'start':'Welcome message and basic instructions',
@@ -66,8 +66,6 @@ if __name__=='__main__':
         reply_keyboard=ReplyKeyboardMarkup(resize_keyboard=True)
         categories=fetch_categories()
         if categories!=0:
-            
-            
             for category in categories:
                 reply_keyboard.add(category[0])
             bot.send_message(cid,'choose the category',reply_markup=reply_keyboard)
@@ -156,7 +154,7 @@ if __name__=='__main__':
     @bot.message_handler(commands=['profile_settings'])
     def profile_settings_command(message):
         cid=message.chat.id
-        bot.send_message(cid,'Enter the datas with this format to edit your profile:full_name,username,email,mobile_number')
+        bot.send_message(cid,'Enter the datas with this format to edit your profile: full_name,username,email,mobile_number')
         user_step[cid]=7
 
 
@@ -170,6 +168,7 @@ if __name__=='__main__':
             for order in orders:
                 for key in order:
                     text+=f"{key}: {order[key]}\n\n"
+                text+='-----------------------------\n'
             bot.send_message(cid,text)
         else:
             bot.send_message(cid,'Nothing found!')
@@ -194,6 +193,7 @@ if __name__=='__main__':
                 for user in users:
                     for key in user:
                         text+=f"{key}: {user[key]}\n\n"
+                    text+='-----------------------------\n'
                 bot.send_message(cid,text)
             else:
                 bot.send_message(cid,'Nothing found!')
@@ -229,6 +229,7 @@ if __name__=='__main__':
             response='Available products:\n\n'
             for product in products:
                 response+=f"ID: {product['product_id']}\nName: {product['name']}\nPrice: ${product['price']}\n\n"
+                response+='-----------------------------\n'
             bot.send_message(cid,response)    
         else:
             bot.send_message(cid, 'No products available.')
@@ -258,6 +259,7 @@ if __name__=='__main__':
                 if product['img']:
                     with open(product['img'],'rb') as photo:
                         bot.send_photo(cid,photo,caption=product_info,parse_mode='Markdown')
+                        
                 else:
                     bot.send_message(cid,product_info,parse_mode='Markdown')
             else:
@@ -307,7 +309,25 @@ if __name__=='__main__':
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==7)
     def profile_settings_func(message):
-        pass
+        cid=message.chat.id
+        try:
+            data_inputs=message.text.strip().split(',')
+            full_name=data_inputs[0]
+            username=data_inputs[1]
+            email=data_inputs[2]
+            mobile_number=data_inputs[3]
+            response=profile_settings(cid,full_name,username,email,mobile_number)
+            if response==1:
+                bot.send_message(cid,'Profile has been editted successfully')
+            else:
+                bot.send_message(cid,'Error occured during processing use /help command')
+        
+            
+        except Exception as e:
+            bot.send_message(cid,'Error occured during processing please enter the datas as the given format')
+
+        finally:
+            user_step[cid]=-1
 
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==8)
@@ -320,6 +340,7 @@ if __name__=='__main__':
             for order in order_detail:
                 for key in order:
                     text+=f"{key}: {order[key]}\n\n"
+                text+='-----------------------------\n'
             bot.send_message(cid,text)
 
         else:
@@ -350,7 +371,7 @@ if __name__=='__main__':
         cid=message.chat.id
         if user_step.get(cid)==2:
             if message.caption:
-                data_lst=message.caption.split(',')
+                data_lst=message.caption.strip().split(',')
                 if len(data_lst)==5:
                     try:
                         file_info=bot.get_file(message.photo[-1].file_id)

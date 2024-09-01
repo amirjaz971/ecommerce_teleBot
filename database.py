@@ -1,5 +1,6 @@
 import mysql.connector
 from config import DB_CONFIG
+import logging
 
 def initialize_db():
     conn = mysql.connector.connect(**DB_CONFIG)
