@@ -2,7 +2,6 @@
 from config import Channel_cid, admins,bot,logging
 from utils.database_utils import  fetch_categories,get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart, view_cart,remove_from_cart,checkout,get_profile_data,profile_settings,get_all_orders,get_order_detail,get_all_users,get_user_detail
 from messages import command_default
-from handlers import messages
 from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup,KeyboardButton
 
 
@@ -10,6 +9,7 @@ from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboa
 if __name__=='__main__':
     user_step=dict()
     hideboard = ReplyKeyboardRemove()
+    
 
     commands={
         'start':'Welcome message and basic instructions',
@@ -225,7 +225,7 @@ if __name__=='__main__':
         if products:
             response='Available products:\n\n'
             for product in products:
-                response+=f"ID: {product['product_id']}\nName: {product['name']}\nPrice: ${product['price']}\nInventory: {product['inventory']}\n\n"
+                response+=f"ID: {product['product_id']}\nName: {product['name']}\nPrice: ${product['price']}\n\n"
             bot.send_message(cid,response)    
         else:
             bot.send_message(cid, 'No products available.')
@@ -330,35 +330,35 @@ if __name__=='__main__':
 
 
 
-@bot.message_handler(content_types=['photo'])
-def handle_product_image(message):
-    cid=message.chat.id
-    if user_step.get(cid)==2:
-        if message.caption:
-            data_lst=message.caption.split(',')
-            if len(data_lst)==5:
-                try:
-                    file_info=bot.get_file(message.photo[-1].file_id)
-                    
-                    downloaded_file=bot.download_file(file_info.file_path)
-                    img_path=f'product_images/{file_info.file_path.split("/")[-1]}'
-                    with open(img_path,'wb') as new_file:
-                        new_file.write(downloaded_file)
+    @bot.message_handler(content_types=['photo'])
+    def handle_product_image(message):
+        cid=message.chat.id
+        if user_step.get(cid)==2:
+            if message.caption:
+                data_lst=message.caption.split(',')
+                if len(data_lst)==5:
+                    try:
+                        file_info=bot.get_file(message.photo[-1].file_id)
+                        
+                        downloaded_file=bot.download_file(file_info.file_path)
+                        img_path=f'product_images/{file_info.file_path.split("/")[-1]}'
+                        with open(img_path,'wb') as new_file:
+                            new_file.write(downloaded_file)
 
-                    data_lst.append(img_path)
-                    response=add_product(data_lst)
-                    if response==1:
-                        bot.send_message(cid,'Product has been added successfully')
-                    else:
-                        bot.send_message(cid,'Failed to add product')
-                except Exception as e:
-                    bot.send_message(cid,f"Error: {e}")
+                        data_lst.append(img_path)
+                        response=add_product(data_lst)
+                        if response==1:
+                            bot.send_message(cid,'Product has been added successfully')
+                        else:
+                            bot.send_message(cid,'Failed to add product')
+                    except Exception as e:
+                        bot.send_message(cid,f"Error: {e}")
+                else:
+                    bot.send_message(cid,'Incorrect format. Please use: category,name,price,inventory,description')
             else:
-                bot.send_message(cid,'Incorrect format. Please use: category,name,price,inventory,description')
+                bot.send_message(cid,'Please provide caption for product details')
         else:
-            bot.send_message(cid,'Please provide caption for product details')
-    else:
-        bot.send_message(cid,'Please use /add_product command')    
+            bot.send_message(cid,'Please use /add_product command')    
 
 
 
@@ -405,7 +405,7 @@ def handle_product_image(message):
     
 
 
-    bot.message_handler(func=lambda m: True, content_types=['text'])(messages.command_default)
+    bot.message_handler(func=lambda m: True, content_types=['text'])(command_default)
 
 
     bot.infinity_polling(skip_pending=True)

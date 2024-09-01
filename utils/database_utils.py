@@ -13,7 +13,7 @@ def get_db_connection():
 def fetch_categories():
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)    
+        cursor = conn.cursor()    
 
         cursor.execute('SELECT DISTINCT category FROM product')   
         categories=cursor.fetchall()
@@ -75,6 +75,7 @@ def get_product_detail(product_id):
         cursor=conn.cursor(dictionary=True)
         cursor.execute('select * from product where product_id=%s',(product_id,))
         product=cursor.fetchone()
+        
         # cursor.execute('select file_id from product_images where product_id=%s',(product_id,))
         # product_img=cursor.fetchall()
         if product:
@@ -91,11 +92,12 @@ def add_product(data_lst):
     try:
         conn=get_db_connection()
         cursor=conn.cursor()
-        cursor.execute('insert into product(category, name, price, inventory, description,img) values(%s,%s,%s,%s,%s,%s)',(data_lst[0],data_lst[1],data_lst[2],data_lst[3],data_lst[4],data_lst[5]))
+        cursor.execute('insert into product(category, name, price, inventory, description,img) values(%s,%s,%s,%s,%s,%s)',(data_lst[0].lower(),data_lst[1],data_lst[2],data_lst[3],data_lst[4],data_lst[5]))
         conn.commit()
 
         return 1
     except Exception as e:
+        print(e)
         return 0
     finally:
         cursor.close()
