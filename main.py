@@ -1,5 +1,5 @@
 
-from config import Channel_cid, admins,bot,logging
+from config import admins,bot,logging
 from utils.database_utils import  fetch_categories,get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart, view_cart,remove_from_cart,checkout,get_profile_data,profile_settings,get_all_orders,get_order_detail,get_all_users,get_user_detail
 from messages import command_default
 from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup,KeyboardButton
@@ -73,7 +73,7 @@ if __name__=='__main__':
             bot.send_message(cid,'choose the category',reply_markup=reply_keyboard)
             user_step[cid]=0
         else:
-            bot.send_message(cid,'Error occured please try /list_products command again')
+            bot.send_message(cid,'Nothing found!')
         
         
 
@@ -93,7 +93,7 @@ if __name__=='__main__':
         cid=message.chat.id
         if cid in admins:
 
-            bot.send_message(cid,'To add product please send image and the caption using this format: category,name,price,inventory,description')
+            bot.send_message(cid,'To add product please send image and the caption using this format: category,name,price,inventory,description\n\nAvailable categories: shirts,pants,shoes,hats,jackets')
             user_step[cid]=2
         else:
             command_default(message)
@@ -189,11 +189,14 @@ if __name__=='__main__':
         cid=message.chat.id
         if cid in admins:
             users=get_all_users()
-            text='Users:\n\n'
-            for user in users:
-                for key in user:
-                    text+=f"{key}: {user[key]}\n\n"
-            bot.send_message(cid,text)
+            if users!=0:
+                text='Users:\n\n'
+                for user in users:
+                    for key in user:
+                        text+=f"{key}: {user[key]}\n\n"
+                bot.send_message(cid,text)
+            else:
+                bot.send_message(cid,'Nothing found!')
         else:
             command_default(message)
                 
@@ -244,11 +247,12 @@ if __name__=='__main__':
             if product!=0:
                 product_info = (
                     
+                    f"**ID:** {product['product_id']}\n"
                     f"**Category:** {product['category']}\n"
                     f"**Product Name:** {product['name']}\n"
                     f"**Price:** ${product['price']}\n"
-                    f"**Inventory:** {product['inventory']}\n"
-                    f"**Description:** {product['description']}"
+                    f"**Description:** {product['description']}\n"
+                    f"**Added Date:** {product['added_date']}"
                 )
                     
                 if product['img']:
@@ -325,7 +329,18 @@ if __name__=='__main__':
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==9)
     def view_user_detail_func(message):
-        pass
+        cid=message.chat.id
+        user_id=message.text.strip()
+        user=get_user_detail(user_id)
+        if user!=0:
+            text='User Detail:\n\n'
+            for key in user:
+                text+=f"{key}: {user[key]}\n\n"
+            bot.send_message(cid,text)
+
+        else:
+            bot.send_message(cid,'Nothing found!')
+        user_step[cid]=-1
 
 
 

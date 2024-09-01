@@ -76,8 +76,6 @@ def get_product_detail(product_id):
         cursor.execute('select * from product where product_id=%s',(product_id,))
         product=cursor.fetchone()
         
-        # cursor.execute('select file_id from product_images where product_id=%s',(product_id,))
-        # product_img=cursor.fetchall()
         if product:
             return product
         else:
@@ -267,6 +265,12 @@ def get_all_users():
     try:
         conn=get_db_connection()
         cursor=conn.cursor(dictionary=True)
+        cursor.execute('select cid,registered_date from user')
+        users=cursor.fetchall()
+        if users:
+            return users
+        else:
+            return 0
 
 
 
@@ -282,8 +286,12 @@ def get_user_detail(user_id):
     try:
         conn=get_db_connection()
         cursor=conn.cursor(dictionary=True)
-
-
+        cursor.execute('select * from user where cid=%s',(user_id,))
+        user=cursor.fetchone()
+        if user:
+            return user
+        else:
+            return 0
 
     except Exception as e:
         return 0
