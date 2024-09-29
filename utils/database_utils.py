@@ -120,7 +120,7 @@ def remove_product(product_id):
         conn.close()
 
 
-def add_to_cart(cid,product_id,quantity):
+def add_to_cart(cid,product_id,quantity=1):
     try:
         conn=get_db_connection()
         cursor=conn.cursor(dictionary=True)
@@ -136,15 +136,21 @@ def add_to_cart(cid,product_id,quantity):
 
         cursor.execute('SELECT inventory FROM PRODUCT WHERE product_id=%s',(product_id,))
         product=cursor.fetchone()
-        if int(quantity)<=product['inventory']:
-            
-            cursor.execute('insert into orderItem(product_id,order_id,quantity) values(%s,%s,%s)',(product_id,order_id,quantity))
-
-
+        if product and int(quantity)<=product['inventory']:
+            cursor.execute('SELECT * FROM orderItem WHERE product_id=%s AND order_id=%s', (product_id, order_id))
+            order_item = cursor.fetchone()
+            if order_item:
+                cursor.execute('UPDATE orderItem SET quantity=%s WHERE product_id=%s AND order_id=%s', 
+                               (quantity, product_id, order_id))
+            else:
+                cursor.execute('INSERT INTO orderItem(product_id, order_id, quantity) VALUES (%s, %s, %s)', 
+                               (product_id, order_id, quantity))
+        else:
+            return False
         conn.commit()
-
+        return True
     except Exception as e:
-        return 0
+        return False
     finally:
         cursor.close()
         conn.close()

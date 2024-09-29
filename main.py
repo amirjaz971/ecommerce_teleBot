@@ -3,6 +3,7 @@ from config import admins,bot,setup_logging_config
 from utils.database_utils import  fetch_categories,get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart, view_cart,remove_from_cart,checkout,get_profile_data,profile_settings,get_all_orders,get_order_detail,get_all_users,get_user_detail
 from messages import command_default
 from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup,KeyboardButton
+from telebot import types
 import logging
 
 
@@ -116,8 +117,7 @@ if __name__=='__main__':
     @bot.message_handler(commands=['add_to_cart'])
     def add_to_cart_command(message):
         cid = message.chat.id
-
-        bot.send_message(cid,"Enter the product ID and quantity with this format:product_id,quantity")
+        bot.send_message(cid,"Enter the product ID to add to the cart with this format:product_id")
         user_step[cid]=4
         
 
@@ -288,10 +288,20 @@ if __name__=='__main__':
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==4)
     def add_to_cart_func(message):
-        pass
+        try:
+            cid=message.chat.id
+            product_id=message.text.strip()
+            quantity=1
 
+            markup = types.InlineKeyboardMarkup(row_width=3)
+            plus_btn=types.InlineKeyboardButton('+',callback_data=f"plus_{product_id}_{quantity}")
+            minus_btn=types.InlineKeyboardButton('-',callback_data=f"minus_{product_id}_{quantity}")
+            confirm_btn=types.InlineKeyboardButton('Add to Cart',callback_data=f"confirm_{product_id}_{quantity}")
+            markup.add(minus_btn, plus_btn, confirm_btn)
 
-
+            bot.send_message(cid, f"Adding product {product_id} to the cart.\nQuantity: {quantity}", reply_markup=markup)
+        except Exception as e:
+            bot.send_message(cid, f"An error occurred")
 
 
 
@@ -398,47 +408,34 @@ if __name__=='__main__':
 
 
 
+@bot.callback_query_handler(func=lambda call:call.data.startswith(('plus', 'minus', 'confirm')))
+def callback_query_function(call):
+    cid=call.message.chat.id
+    data=call.data.split('_')
+    action=data[0]
+    product_id=data[1]
+    quantity=data[2]
+
+    if action=='plus':
+        quantity+=1
+    elif action=='minus' and quantity>1:
+        quantity-=1
+    else:
+        if add_to_cart(cid,product_id,quantity):
+            bot.send_message(cid,f'Product {product_id} added to cart with quantity: {quantity}')
+        else:
+            bot.send_message(cid,'Failed to add to cart.')
+
+    markup = types.InlineKeyboardMarkup(row_width=3)
+    plus_btn=types.InlineKeyboardButton('+',callback_data=f"plus_{product_id}_{quantity}")
+    minus_btn=types.InlineKeyboardButton('-',callback_data=f"minus_{product_id}_{quantity}")
+    confirm_btn=types.InlineKeyboardButton('Add to Cart',callback_data=f"confirm_{product_id}_{quantity}")
+    markup.add(minus_btn, plus_btn, confirm_btn)
 
 
+    bot.edit_message_text(chat_id=cid, message_id=call.message.message_id, text=f"Product {product_id}\nQuantity: {quantity}", reply_markup=markup)
 
-# @bot.callback_query_handler(func=lambda call: True)
-# def callback_query_function(call):
-#     # print(call.message.reply_markup.keyboard[0][1].text)
-#     call_id = call.id
-#     cid = call.message.chat.id
-#     mid = call.message.message_id
-#     data = call.data
-#     print(f'button pressed, id: {call_id}, cid: {cid}, message id: {mid}, data: {data}')
-#     if data.startswith('change'):
-#         command, code, new_qty = data.split('_')
-#         if new_qty == '0':
-#             bot.answer_callback_query(call_id, f'quantity cannot be zero')
-#         else:
-#             caption, new_markup = generate_product_markup(int(code), int(new_qty))
-#             bot.edit_message_caption(caption, cid, mid)
-#             bot.edit_message_reply_markup(cid, mid, reply_markup=new_markup)
-#             bot.answer_callback_query(call_id, f'quantity changed to {new_qty}')
-#     elif data == 'cancel':
-#         bot.answer_callback_query(call_id, f'operation canceled')
-#         bot.edit_message_reply_markup(cid, mid, reply_markup=None)
-#         bot.delete_message(cid, mid)        
-#     elif data.startswith('add'):
-#         command, code, qty = data.split('_')
-#         shopping_cart.setdefault(cid, dict())
-#         shopping_cart[cid][int(code)] = int(qty)
-#         bot.answer_callback_query(call_id, f'{qty} itme {code} added to basket')
-#         markup = InlineKeyboardMarkup()
-#         markup.add(InlineKeyboardButton('✅ added to basket', callback_data='show_basket'))
-#         bot.edit_message_reply_markup(cid, mid, reply_markup=markup)
-#     elif data == 'show_basket':
-#         basket = shopping_cart[cid]
-#         bot.send_message(cid, f'your shopping cart: {basket}')
-
-
-        
-
-
-    
+      
 
 
     bot.message_handler(func=lambda m: True, content_types=['text'])(command_default)

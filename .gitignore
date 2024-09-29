@@ -1,1 +1,4 @@
 project.log
+
+**/__pycache__/
+**/*.py[cod]
