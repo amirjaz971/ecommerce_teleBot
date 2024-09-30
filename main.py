@@ -1,6 +1,8 @@
 
 from config import admins,bot,setup_logging_config
-from utils.database_utils import  fetch_categories,get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart, view_cart,remove_from_cart,checkout,get_profile_data,profile_settings,get_all_orders,get_order_detail,get_all_users,get_user_detail
+from utils.database_utils import  (fetch_categories,get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart
+                                   , view_cart,remove_from_cart,checkout,get_profile_data,profile_settings
+                                   ,get_all_orders,get_order_detail,get_all_users,get_user_detail,uncompleted_order)
 from messages import command_default
 from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup,KeyboardButton
 from telebot import types
@@ -133,8 +135,13 @@ if __name__=='__main__':
     @bot.message_handler(commands=['checkout'])
     def checkout_command(message):
         cid=message.chat.id
-        bot.send_message(cid,'Enter the address to check and ship the order')
-        user_step[cid]=6
+        order_items=uncompleted_order(cid)
+        if order_items:
+            
+            bot.send_message(cid,'Enter the address to check and ship the order')
+            user_step[cid]=6
+        else:
+            bot.send_message(cid,'Order not found!')
 
 
     @bot.message_handler(commands=['profile_view'])
@@ -314,7 +321,10 @@ if __name__=='__main__':
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==6)
     def checkout_func(message):
-        pass
+        cid=message.chat.id
+        address=message.text.strip()
+        response=checkout(cid,address)
+        
 
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==7)

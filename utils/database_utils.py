@@ -1,7 +1,7 @@
 import mysql.connector
 from config import DB_CONFIG
 import logging
-
+import datetime
 
 def get_db_connection():
     try:
@@ -188,11 +188,25 @@ def checkout(cid,address):
     try:
         conn=get_db_connection()
         cursor=conn.cursor(dictionary=True)
-
-
+        cursor.execute('select order_id from `order` where cid=%s AND date_ordered is NULL',(cid,))
+        order=cursor.fetchone()
+        if order:
+            order_id=order['order_id']
+        else:
+            return False
+        now=datetime.datetime.now()
+        cursor.execute('UPDATE `order` set date_ordered=%s where order_id=%s',(now,order_id))
+        cursor.execute('insert into shipping (order_id,address) values(%s,%s)',(order_id,address))
+        cursor.execute('select * from shipping where order_id=%s',(order_id,))
+        shipping=cursor.fetchone()
+        conn.commit()
+        if shipping:
+            return shipping
+        else:
+            return False
 
     except Exception as e:
-        return 0
+        return False
     finally:
         cursor.close()
         conn.close()
@@ -302,6 +316,31 @@ def get_user_detail(user_id):
     except Exception as e:
         return 0
 
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def uncompleted_order(cid):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
+        cursor.execute('select order_id from `order` where cid=%s AND date_ordered is NULL',(cid,))
+        order=cursor.fetchone()
+        if order:
+            order_id=order['order_id']
+        else:
+            return False
+        cursor.execute('select * from orderItem where order_id=%s',(order_id,))
+        order_items=cursor.fetchall()
+
+        if order_items:
+            return order_items
+        return False
+        
+    except Exception as e:
+        return False
+    
     finally:
         cursor.close()
         conn.close()
