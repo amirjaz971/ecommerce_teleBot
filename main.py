@@ -1,11 +1,13 @@
 
 from config import admins,bot,setup_logging_config
-from utils.database_utils import  (fetch_categories,get_or_create_user,get_all_products,get_product_detail,add_product,remove_product,add_to_cart
-                                   , view_cart,remove_from_cart,checkout,get_profile_data,profile_settings
-                                   ,get_all_orders,get_order_detail,get_all_users,get_user_detail,uncompleted_order)
+from utils.database_utils import  (fetch_categories,get_or_create_user,get_all_products,get_product_detail
+                                   ,add_product,remove_product,add_to_cart
+                                   ,remove_from_cart,checkout,get_profile_data,profile_settings
+                                   ,get_all_orders,get_order_detail,get_all_users,get_user_detail
+                                   ,uncompleted_order,get_all_shippings,get_product_price,cancel_order)
 from messages import command_default
-from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup,KeyboardButton
-from telebot import types
+from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
+
 import logging
 
 
@@ -27,7 +29,9 @@ if __name__=='__main__':
         'profile_settings':'Edit your profile information',
         'order_history':'View all completed orders',
         'order_detail':'View completed order detail',
-        }
+        'shipping_history':'View all shippings',
+        'cancel_order':'Remove the uncompleted order'
+    }
 
     admin_commands={
         'add_product':'Add product to the list',
@@ -114,7 +118,28 @@ if __name__=='__main__':
     @bot.message_handler(commands=['view_cart'])
     def view_cart_command(message):
         cid = message.chat.id
+        total_price=0
+        item_price=0
+        product_price=0
+        order_items=uncompleted_order(cid)
+        if order_items:
+            text='Cart:\n\n'
+            for item in order_items:
+                product_price=get_product_price(item['product_id'])
+                quantity=item['quantity']
+                item_price=product_price*quantity
+                
+                for key in item:
+                    text+=f"{key}: {item[key]}\n\n"
+                text+=f'Price: {item_price}\n\n'
+                text+='--------------------------------'
+                total_price+=item_price
+            text+=f'Total Price: {total_price}'
 
+            bot.send_message(cid,text)
+
+        else:
+            bot.send_message(cid,'Cart is empty')
 
     @bot.message_handler(commands=['add_to_cart'])
     def add_to_cart_command(message):
@@ -126,6 +151,7 @@ if __name__=='__main__':
     @bot.message_handler(commands=['remove_from_cart'])
     def remove_from_cart_command(message):
         cid = message.chat.id
+        bot.send_message(cid,'Enter the order_item ID to remove item from cart')
         user_step[cid]=5
 
 
@@ -135,10 +161,25 @@ if __name__=='__main__':
     @bot.message_handler(commands=['checkout'])
     def checkout_command(message):
         cid=message.chat.id
+        total_price=0
+        item_price=0
+        product_price=0
         order_items=uncompleted_order(cid)
         if order_items:
-            
-            bot.send_message(cid,'Enter the address to check and ship the order')
+            text='Cart:\n\n'
+            for item in order_items:
+                product_price=get_product_price(item['product_id'])
+                quantity=item['quantity']
+                item_price=product_price*quantity
+                
+                for key in item:
+                    text+=f"{key}: {item[key]}\n\n"
+                text+=f'Price: {item_price}\n\n'
+                text+='--------------------------------'
+                total_price+=item_price
+            text+=f'Total Price: {total_price}\n\n' 
+            text+='Enter the address to check and ship the order'         
+            bot.send_message(cid,text)
             user_step[cid]=6
         else:
             bot.send_message(cid,'Order not found!')
@@ -220,8 +261,30 @@ if __name__=='__main__':
 
 
 
+    @bot.message_handler(commands=['shipping_history'])
+    def shipping_history_command(message):
+        cid=message.chat.id
+
+        shippings=get_all_shippings(cid)
+        if shippings:
+            text='Shippings:'
+            for shipping in shippings:
+                for key in shipping:
+                    text+=f'{key}: {shipping[key]}\n\n'
+            bot.send_message(cid,text)
+        else:
+            bot.send_message(cid,'Nothing found!')
 
 
+
+    @bot.message_handler(commands=['cancel_order'])
+    def cancel_order_command(message):
+        cid=message.chat.id
+        response=cancel_order(cid)
+        if response==1:
+            bot.send_message(cid,'Order has been canceled')
+        else:
+            bot.send_message(cid,'Failed to cancel the order')
 
 
 
@@ -300,10 +363,10 @@ if __name__=='__main__':
             product_id=message.text.strip()
             quantity=1
 
-            markup = types.InlineKeyboardMarkup(row_width=3)
-            plus_btn=types.InlineKeyboardButton('+',callback_data=f"plus_{product_id}_{quantity}")
-            minus_btn=types.InlineKeyboardButton('-',callback_data=f"minus_{product_id}_{quantity}")
-            confirm_btn=types.InlineKeyboardButton('Add to Cart',callback_data=f"confirm_{product_id}_{quantity}")
+            markup = InlineKeyboardMarkup(row_width=3)
+            plus_btn=InlineKeyboardButton('+',callback_data=f"plus_{product_id}_{quantity}")
+            minus_btn=InlineKeyboardButton('-',callback_data=f"minus_{product_id}_{quantity}")
+            confirm_btn=InlineKeyboardButton('Add to Cart',callback_data=f"confirm_{product_id}_{quantity}")
             markup.add(minus_btn, plus_btn, confirm_btn)
 
             bot.send_message(cid, f"Adding product {product_id} to the cart.\nQuantity: {quantity}", reply_markup=markup)
@@ -314,7 +377,15 @@ if __name__=='__main__':
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==5)
     def remove_from_cart_func(message):
-        pass
+        cid=message.chat.id
+        orderItem_id=message.text.strip()
+        response=remove_from_cart(cid,orderItem_id)
+
+        if response==1:
+            bot.send_message(cid,'Item has been removed from cart')
+        else:
+            bot.send_message(cid,'Failed to remove the item from cart')
+
 
 
 
@@ -324,7 +395,15 @@ if __name__=='__main__':
         cid=message.chat.id
         address=message.text.strip()
         response=checkout(cid,address)
+        if response:
+            text='Shipping:\n\n'
+            for key in response:
+                text+=f'{key}: {response[key]}\n\n'
+            text+='The order will be sent to you'
         
+            bot.send_message(cid,text)
+        else:
+            bot.send_message(cid,'Error occured!')
 
 
     @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==7)
@@ -418,32 +497,32 @@ if __name__=='__main__':
 
 
 
-@bot.callback_query_handler(func=lambda call:call.data.startswith(('plus', 'minus', 'confirm')))
-def callback_query_function(call):
-    cid=call.message.chat.id
-    data=call.data.split('_')
-    action=data[0]
-    product_id=data[1]
-    quantity=data[2]
+    @bot.callback_query_handler(func=lambda call:call.data.startswith(('plus', 'minus', 'confirm')))
+    def callback_query_function(call):
+        cid=call.message.chat.id
+        data=call.data.split('_')
+        action=data[0]
+        product_id=data[1]
+        quantity=data[2]
 
-    if action=='plus':
-        quantity+=1
-    elif action=='minus' and quantity>1:
-        quantity-=1
-    else:
-        if add_to_cart(cid,product_id,quantity):
-            bot.send_message(cid,f'Product {product_id} added to cart with quantity: {quantity}')
+        if action=='plus':
+            quantity+=1
+        elif action=='minus' and quantity>1:
+            quantity-=1
         else:
-            bot.send_message(cid,'Failed to add to cart.')
+            if add_to_cart(cid,product_id,quantity):
+                bot.send_message(cid,f'Product {product_id} added to cart with quantity: {quantity}')
+            else:
+                bot.send_message(cid,'Failed to add to cart.')
 
-    markup = types.InlineKeyboardMarkup(row_width=3)
-    plus_btn=types.InlineKeyboardButton('+',callback_data=f"plus_{product_id}_{quantity}")
-    minus_btn=types.InlineKeyboardButton('-',callback_data=f"minus_{product_id}_{quantity}")
-    confirm_btn=types.InlineKeyboardButton('Add to Cart',callback_data=f"confirm_{product_id}_{quantity}")
-    markup.add(minus_btn, plus_btn, confirm_btn)
+        markup = InlineKeyboardMarkup(row_width=3)
+        plus_btn=InlineKeyboardButton('+',callback_data=f"plus_{product_id}_{quantity}")
+        minus_btn=InlineKeyboardButton('-',callback_data=f"minus_{product_id}_{quantity}")
+        confirm_btn=InlineKeyboardButton('Add to Cart',callback_data=f"confirm_{product_id}_{quantity}")
+        markup.add(minus_btn, plus_btn, confirm_btn)
 
 
-    bot.edit_message_text(chat_id=cid, message_id=call.message.message_id, text=f"Product {product_id}\nQuantity: {quantity}", reply_markup=markup)
+        bot.edit_message_text(chat_id=cid, message_id=call.message.message_id, text=f"Product {product_id}\nQuantity: {quantity}", reply_markup=markup)
 
       
 

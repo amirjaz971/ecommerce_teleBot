@@ -1,7 +1,7 @@
 import logging
 import telebot
 
-API_TOKEN = '7041414535:AAE46lwqg81SBPNxg6BsOO-jhQScP9BmUWQ'
+API_TOKEN = '7041414535:AAGj_6rSBT0UnzYGmycTF3IYRfLy8abczLM'
 
 admins = [245324256]  
 
