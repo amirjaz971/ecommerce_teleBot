@@ -355,9 +355,13 @@ def uncompleted_order(cid):
 def get_all_shippings(cid):
     try:
         conn=get_db_connection()
-        cursor=conn.cursor(dictionary=True)
-        cursor.execute('select * from shipping where cid=%s',(cid,))
-        shippings=cursor.fetchall()
+        cursor1=conn.cursor()
+        cursor2=conn.cursor(dictionary=True)
+        cursor1.execute('select order_id from `order` where cid=%s',(cid,))
+        orders_id=cursor1.fetchall()
+        place_holders=','.join(['%s']*len(orders_id[0]))
+        cursor2.execute(f"select * from shipping where order_id IN ({place_holders})",orders_id[0])
+        shippings=cursor2.fetchall()
 
         if shippings:
             return shippings
@@ -369,7 +373,8 @@ def get_all_shippings(cid):
         logging.exception(f"Error:{e}")
         return False
     finally:
-        cursor.close()
+        cursor1.close()
+        cursor2.close()
         conn.close()  
 
 

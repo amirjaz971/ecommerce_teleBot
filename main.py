@@ -132,7 +132,7 @@ if __name__=='__main__':
                 for key in item:
                     text+=f"{key}: {item[key]}\n\n"
                 text+=f'Price: {item_price}\n\n'
-                text+='--------------------------------'
+                text+='--------------------------------\n\n'
                 total_price+=item_price
             text+=f'Total Price: {total_price}'
 
@@ -175,7 +175,7 @@ if __name__=='__main__':
                 for key in item:
                     text+=f"{key}: {item[key]}\n\n"
                 text+=f'Price: {item_price}\n\n'
-                text+='--------------------------------'
+                text+='--------------------------------\n\n'
                 total_price+=item_price
             text+=f'Total Price: {total_price}\n\n' 
             text+='Enter the address to check and ship the order'         
@@ -267,7 +267,7 @@ if __name__=='__main__':
 
         shippings=get_all_shippings(cid)
         if shippings:
-            text='Shippings:'
+            text='Shippings:\n\n'
             for shipping in shippings:
                 for key in shipping:
                     text+=f'{key}: {shipping[key]}\n\n'
@@ -362,14 +362,21 @@ if __name__=='__main__':
             cid=message.chat.id
             product_id=message.text.strip()
             quantity=1
+            product=get_product_detail(product_id)
+            if product:
+                if product['img']:
+                    with open(product['img'],'rb') as photo:
+                        bot.send_photo(cid,photo,parse_mode='Markdown')
+                markup = InlineKeyboardMarkup(row_width=3)
+                plus_btn=InlineKeyboardButton('+',callback_data=f"plus_{product_id}_{quantity}")
+                minus_btn=InlineKeyboardButton('-',callback_data=f"minus_{product_id}_{quantity}")
+                confirm_btn=InlineKeyboardButton('Add to Cart',callback_data=f"confirm_{product_id}_{quantity}")
+                markup.add(minus_btn, plus_btn, confirm_btn)
 
-            markup = InlineKeyboardMarkup(row_width=3)
-            plus_btn=InlineKeyboardButton('+',callback_data=f"plus_{product_id}_{quantity}")
-            minus_btn=InlineKeyboardButton('-',callback_data=f"minus_{product_id}_{quantity}")
-            confirm_btn=InlineKeyboardButton('Add to Cart',callback_data=f"confirm_{product_id}_{quantity}")
-            markup.add(minus_btn, plus_btn, confirm_btn)
-
-            bot.send_message(cid, f"Adding product {product_id} to the cart.\nQuantity: {quantity}", reply_markup=markup)
+                bot.send_message(cid, f"Adding product {product_id} to the cart.\nQuantity: {quantity}", reply_markup=markup)
+            else:
+                bot.send_message(cid,'Product not found!')
+                
         except Exception as e:
             bot.send_message(cid, f"An error occurred")
 
@@ -503,7 +510,8 @@ if __name__=='__main__':
         data=call.data.split('_')
         action=data[0]
         product_id=data[1]
-        quantity=data[2]
+        quantity=int(data[2])
+        
 
         if action=='plus':
             quantity+=1
@@ -522,7 +530,7 @@ if __name__=='__main__':
         markup.add(minus_btn, plus_btn, confirm_btn)
 
 
-        bot.edit_message_text(chat_id=cid, message_id=call.message.message_id, text=f"Product {product_id}\nQuantity: {quantity}", reply_markup=markup)
+        bot.edit_message_text(chat_id=cid, message_id=call.message.message_id,text=f"Product {product_id}\nQuantity: {quantity}", reply_markup=markup)
 
       
 
