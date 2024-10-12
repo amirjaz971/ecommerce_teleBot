@@ -284,6 +284,7 @@ if __name__=='__main__':
             for shipping in shippings:
                 for key in shipping:
                     text+=f'{key}: {shipping[key]}\n\n'
+                text+='--------------------------------\n\n'
             bot.send_message(cid,text)
         else:
             bot.send_message(cid,'Nothing found!')
