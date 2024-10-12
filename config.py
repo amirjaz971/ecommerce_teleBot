@@ -2,7 +2,7 @@ import logging
 import telebot
 
 API_TOKEN = '7041414535:AAGj_6rSBT0UnzYGmycTF3IYRfLy8abczLM'
-#API_TOKEN = '7409402991:AAF0INDZNPZxK5uQksICJX6RQ9YPF-BvuHs'
+
 
 admins = [245324256]  
 
@@ -14,6 +14,7 @@ bot = telebot.TeleBot(API_TOKEN, num_threads=10)
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'aseman10',
+    'password': 'aseman10', #Please enter your password
+    'port': 3306,
     'database': 'ecommercebotdb'
 }

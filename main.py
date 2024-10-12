@@ -4,11 +4,10 @@ from utils.database_utils import  (fetch_categories,get_or_create_user,get_all_p
                                    ,add_product,remove_product,add_to_cart
                                    ,remove_from_cart,checkout,get_profile_data,profile_settings
                                    ,get_all_orders,get_order_detail,get_all_users,get_user_detail
-                                   ,uncompleted_order,get_all_shippings,get_product_price,cancel_order)
+                                   ,uncompleted_order,get_all_shippings,get_product_price,cancel_order,update_product)
 from messages import command_default
 from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
 
-import logging
 
 
 if __name__=='__main__':
@@ -115,6 +114,18 @@ if __name__=='__main__':
             command_default(message)   
 
 
+    @bot.message_handler(commands=['update_product'])
+    def update_product_command(message):
+        cid=message.chat.id
+        if cid in admins:
+            bot.send_message(cid,'Enter the product ID and the field which you want to update and the new value with this format:id,field,new_value\nvalid_fields = [category, name, price, inventory, description]')
+            user_step[cid]=10
+        
+        else:
+
+            command_default(message) 
+
+
     @bot.message_handler(commands=['view_cart'])
     def view_cart_command(message):
         cid = message.chat.id
@@ -127,7 +138,9 @@ if __name__=='__main__':
             for item in order_items:
                 product_price=get_product_price(item['product_id'])
                 quantity=item['quantity']
+
                 item_price=product_price*quantity
+                
                 
                 for key in item:
                     text+=f"{key}: {item[key]}\n\n"
@@ -312,30 +325,29 @@ if __name__=='__main__':
     def get_product_id_to_display_func(message):
         cid=message.chat.id
         
-        try:
-            product_id=message.text.strip()
-            product=get_product_detail(product_id)
-            if product!=0:
-                product_info = (
+      
+        product_id=message.text.strip()
+        product=get_product_detail(product_id)
+        if product!=0:
+            product_info = (
+                
+                f"**ID:** {product['product_id']}\n"
+                f"**Category:** {product['category']}\n"
+                f"**Product Name:** {product['name']}\n"
+                f"**Price:** ${product['price']}\n"
+                f"**Description:** {product['description']}\n"
+                f"**Added Date:** {product['added_date']}"
+            )
+                
+            if product['img']:
+                with open(product['img'],'rb') as photo:
+                    bot.send_photo(cid,photo,caption=product_info,parse_mode='Markdown')
                     
-                    f"**ID:** {product['product_id']}\n"
-                    f"**Category:** {product['category']}\n"
-                    f"**Product Name:** {product['name']}\n"
-                    f"**Price:** ${product['price']}\n"
-                    f"**Description:** {product['description']}\n"
-                    f"**Added Date:** {product['added_date']}"
-                )
-                    
-                if product['img']:
-                    with open(product['img'],'rb') as photo:
-                        bot.send_photo(cid,photo,caption=product_info,parse_mode='Markdown')
-                        
-                else:
-                    bot.send_message(cid,product_info,parse_mode='Markdown')
             else:
-                bot.send_message(cid,'Product not found!')
-        except Exception as e:
-            bot.send_message(cid, 'Please provide a valid product ID.')    
+                bot.send_message(cid,product_info,parse_mode='Markdown')
+        else:
+            bot.send_message(cid,'Product not found!')
+ 
 
         user_step[cid]=-1 
 
@@ -471,6 +483,36 @@ if __name__=='__main__':
 
 
 
+    @bot.message_handler(func=lambda m:user_step.get(m.chat.id,'Error occurred during responsing')==10)
+    def update_product_func(message):
+        cid=message.chat.id
+        datas=message.text.strip().split(',')
+        valid_fields = ['category', 'name', 'price', 'inventory', 'description']
+        if len(datas)==3:
+            if datas[1].lower() not in valid_fields:
+                bot.send_message(cid,'Please enter valid field')
+                return
+            try:
+                if datas[1] == 'price':
+                    datas[2] = float(datas[2])
+                elif datas[1] == 'inventory':
+                    datas[2] = int(datas[2])
+            except ValueError:
+                bot.send_message(cid, f'Invalid value for {datas[1]}. Please try again.')
+                return
+
+            response=update_product(datas[0],datas[1],datas[2])
+            if response==1:
+                bot.send_message(cid,'Product has been updated successfully')
+            else:
+                bot.send_message(cid,'Error occured!')
+
+        else:
+            bot.send_message(cid,'Enter correct format!')
+        user_step[cid]=-1
+
+
+
 
     @bot.message_handler(content_types=['photo'])
     def handle_product_image(message):
@@ -483,7 +525,7 @@ if __name__=='__main__':
                         file_info=bot.get_file(message.photo[-1].file_id)
                         
                         downloaded_file=bot.download_file(file_info.file_path)
-                        img_path=f'product_images/{file_info.file_path.split("/")[-1]}'
+                        img_path=f'product_images/{data_lst[0]}/{file_info.file_path.split("/")[-1]}'
                         with open(img_path,'wb') as new_file:
                             new_file.write(downloaded_file)
 
@@ -517,6 +559,7 @@ if __name__=='__main__':
             quantity+=1
         elif action=='minus' and quantity>1:
             quantity-=1
+            
         else:
             if add_to_cart(cid,product_id,quantity):
                 bot.send_message(cid,f'Product {product_id} added to cart with quantity: {quantity}')

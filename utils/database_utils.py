@@ -164,7 +164,7 @@ def add_to_cart(cid,product_id,quantity=1):
             cursor.execute('SELECT * FROM orderItem WHERE product_id=%s AND order_id=%s', (product_id, order_id))
             order_item = cursor.fetchone()
             if order_item:
-                cursor.execute('UPDATE orderItem SET quantity=%s WHERE product_id=%s AND order_id=%s', 
+                cursor.execute(' product set  orderItem SET quantity=%s WHERE product_id=%s AND order_id=%s', 
                                (quantity, product_id, order_id))
             else:
                 cursor.execute('INSERT INTO orderItem(product_id, order_id, quantity) VALUES (%s, %s, %s)', 
@@ -360,6 +360,7 @@ def get_all_shippings(cid):
         cursor1.execute('select order_id from `order` where cid=%s',(cid,))
         orders_id=cursor1.fetchall()
         place_holders=','.join(['%s']*len(orders_id[0]))
+        print(place_holders)
         cursor2.execute(f"select * from shipping where order_id IN ({place_holders})",orders_id[0])
         shippings=cursor2.fetchall()
 
@@ -415,3 +416,20 @@ def cancel_order(cid):
     finally:
         cursor.close()
         conn.close()
+
+
+def update_product(product_id,field,new_value):
+    try:
+        conn=get_db_connection()
+        cursor=conn.cursor(dictionary=True)
+        query = f"UPDATE product SET {field.lower()} = %s WHERE product_id = %s"
+        values = (new_value, product_id)
+        cursor.execute(query, values)
+        conn.commit()
+        return 1
+    except Exception as e:
+        logging.exception(f"Error:{e}")
+        return 0
+    finally:
+        cursor.close()
+        conn.close()   

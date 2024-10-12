@@ -1,13 +1,20 @@
 import mysql.connector
-from config import DB_CONFIG
-import logging
+
+
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'aseman10', #Please enter your password
+    'port': 3306,
+    
+}
 
 def initialize_db():
     conn = mysql.connector.connect(**DB_CONFIG)
     cr=conn.cursor()
 
-    #cr.execute('create database if not exists ecommercebotdb')
-
+    cr.execute('create database if not exists ecommercebotdb')
+    cr.execute('USE ecommercebotdb')
 
 
     cr.execute('''
@@ -66,8 +73,49 @@ def initialize_db():
             FOREIGN KEY (order_id) REFERENCES `order`(order_id) ON DELETE SET NULL
         );
     ''')
-    
+
+    cr.execute('SELECT COUNT(*) FROM product')
+    product_count = cr.fetchone()[0]
+    if product_count==0:
+        products = [
+            ('shirts', 'Classic White Shirt', 29.99, 10, 'A stylish classic white shirt, perfect for formal and casual wear.', 'product_images/shirts/classic_white_shirt.jpg'),
+            ('pants', 'Denim Jeans', 49.99, 15, 'Comfortable and durable denim jeans in various sizes.', 'product_images/pants/denim_jeans.jpg'),
+            ('shoes', 'Running Shoes', 79.99, 25, 'Lightweight and comfortable running shoes for daily use.', 'product_images/shoes/running_shoes.jpg'),
+            ('hats', 'Baseball Cap', 19.99, 50, 'Adjustable baseball cap with a curved brim.', 'product_images/hats/baseball_cap.jpg'),
+            ('jackets', 'Leather Jacket', 99.99, 5, 'Premium leather jacket for a sleek and modern look.', 'product_images/jackets/leather_jacket.jpg')
+        ]
+
+
+        query = '''
+            INSERT INTO product (category, name, price, inventory, description, img) 
+            VALUES (%s, %s, %s, %s, %s, %s);
+        '''
+
+
+        for product in products:
+            cr.execute(query, product)
+
+
+
+        print("Products inserted successfully!")
+
+    else:
+        print('products has been inserted already')
+    print('Connected to the database')
     conn.commit()
     conn.close()
 
 initialize_db()
+
+
+
+
+
+
+
+
+
+
+
+
+
